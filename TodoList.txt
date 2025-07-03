@@ -2,5 +2,6 @@
 - add all courses
 - Host
 - add all revelant models
-- Add data about the gold courses like features and stuff
--Docker
+- Add data about the gold courses like features and stuff - later feature
+- Docker
+- linter (custom?)

@@ -1,18 +1,8 @@
 from playwright.async_api import async_playwright
-from datetime import datetime
-from zoneinfo import ZoneInfo
-import asyncio
 from bs4 import BeautifulSoup
 
-def _getCurrentDay():
-    now = datetime.now(ZoneInfo("America/Winnipeg"))
-    weekday = now.strftime("%A")
-    month = now.strftime("%b")
-    day = now.day
-    return f"{weekday}, {month} {day}"
-
 def _parseHTMLContent(html):
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = BeautifulSoup(html, "html.parser")
     tee_times = []
     for div in soup.select('div[class^="search-results-tee-times-box"]'):
         time_tag = div.find("p", class_="time")
@@ -26,65 +16,63 @@ def _parseHTMLContent(html):
             price = price_tag.get_text(strip=True)
         else:
             price = "N/A"
-        
-        tee_times.append({
-            "time": times,
-            "price": price
-        })
+
+        tee_times.append({"time": times, "price": price})
 
     return tee_times
 
-async def _getCanoeClubData():
+
+async def _getCanoeClubData(requestData):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        print(f"Request Data: {requestData}")  # Debugging line
+        browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
         page.set_default_timeout(6000)  # 60 seconds timeout for all actions
-        await page.goto("https://www.winnipeg.ca/recreation-leisure/golf-courses/canoe-club")
-        await page.click('text=Reserve a tee time')
-        await page.select_option('select[name="Date"]', _getCurrentDay())
-        await page.select_option('select[name="SearchTime"]', '6:00 am')
-        await page.evaluate("""
-            () => {
-                const radio = document.querySelector('input[type="radio"][name="Holes"][value="9"]');
-                if (radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }
-        """)
+        await page.goto(
+            "https://www.winnipeg.ca/recreation-leisure/golf-courses/canoe-club"
+        )
+        await page.click("text=Reserve a tee time")
+        await page.select_option('select[name="Date"]', requestData.date)
+        await page.select_option('select[name="SearchTime"]', requestData.search_time)
 
-        await page.evaluate("""
-            () => {
-                const radio = document.querySelector('input[type="radio"][name="Players"][value="2"]');
-                if (radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }
-        """)
+        await page.evaluate(f"""
+                () => {{
+                    const radio = document.querySelector('input[type="radio"][name="Holes"][value="{requestData.holes}"]');
+                    if (radio) {{
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                    }}
+                }}
+            """)
 
-        await page.click('a.next-btn')
+        await page.evaluate(f"""
+                () => {{
+                    const radio = document.querySelector('input[type="radio"][name="Players"][value="{requestData.players}"]');
+                    if (radio) {{
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                    }}
+                }}
+            """)
+
+        await page.click("a.next-btn")
 
         await page.wait_for_timeout(1000)  # Wait 1 second
 
-
         await page.evaluate("""
-    () => {
-        const btn = document.querySelector('a.more-times-btn');
-        if (btn) btn.click();
-    }
-""")
-        
+        () => {
+            const btn = document.querySelector('a.more-times-btn');
+            if (btn) btn.click();
+        }
+        """)
+
         await page.wait_for_timeout(1000)  # Wait 1 second
 
         return await page.content()
 
-# TODO : get the params into
-def getData():
-    html = asyncio.run(_getCanoeClubData())
+async def getData(requestData):
+    html = await _getCanoeClubData(requestData)
+    #print(f"HTML Content: {html}")  # Print first 1000 characters for debugging
     parsed_data = _parseHTMLContent(html)
-    parsedTeeTimes = ({
-        "course": "Canoe Club",
-        "tee_times": parsed_data
-    })
+    parsedTeeTimes = {"course": "Canoe Club", "tee_times": parsed_data}
     return parsedTeeTimes
