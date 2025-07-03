@@ -1,0 +1,6 @@
+- Add token based securtiy
+- add all courses
+- Host
+- add all revelant models
+- Add data about the gold courses like features and stuff
+-Docker
