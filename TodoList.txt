@@ -1,7 +1,7 @@
-- Add token based securtiy
+- Add token based securtiy - or backend to backend
 - add all courses
-- Host
+- Host the api somewhere
 - add all revelant models
 - Add data about the gold courses like features and stuff - later feature
 - Docker
-- linter (custom?)
+- restrict docs

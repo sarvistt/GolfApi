@@ -1,6 +1,7 @@
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 
+
 def _parseHTMLContent(html):
     soup = BeautifulSoup(html, "html.parser")
     tee_times = []
@@ -70,9 +71,9 @@ async def _getCanoeClubData(requestData):
 
         return await page.content()
 
+
 async def getData(requestData):
     html = await _getCanoeClubData(requestData)
-    #print(f"HTML Content: {html}")  # Print first 1000 characters for debugging
     parsed_data = _parseHTMLContent(html)
     parsedTeeTimes = {"course": "Canoe Club", "tee_times": parsed_data}
     return parsedTeeTimes

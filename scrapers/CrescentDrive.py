@@ -1,6 +1,7 @@
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 
+
 def _parseHTMLContent(html):
     soup = BeautifulSoup(html, "html.parser")
     tee_times = []
@@ -69,6 +70,7 @@ async def _getCrescentDriveData(requestData):
         await page.wait_for_timeout(1000)  # Wait 1 second
 
         return await page.content()
+
 
 async def getData(requestData):
     html = await _getCrescentDriveData(requestData)
