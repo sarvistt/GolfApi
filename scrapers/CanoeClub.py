@@ -1,6 +1,9 @@
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 
+CLUB_NAME = "Canoe Club Golf Course"
+CLUB_URL = "https://www.winnipeg.ca/recreation-leisure/golf-courses/canoe-club"
+CLUB_TAGS = ["9 holes", "Public", "Pro Shop", "Power Cart Rentals", "Equipment Rentals", "Tournament Bookings", "Licensed"]
 
 def _parseHTMLContent(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -22,13 +25,28 @@ def _parseHTMLContent(html):
 
     return tee_times
 
+# Current Format
+# {club: "Canoe Club", price: 50, time: "6:00 am", url: "/course/canoe-club", tags: ['9 holes', '2 players']},
+#
+def _formatTeeTimes(teeTimes):
+    formattedTeeTimes = []
+    for teeTime in teeTimes:
+        formattedTeeTime = {}
+        formattedTeeTime["club"] = CLUB_NAME
+        formattedTeeTime["url"] = CLUB_URL
+        formattedTeeTime["tags"] = CLUB_TAGS
+        formattedTeeTime["price"] = teeTime.get("price", "N/A")
+        formattedTeeTime["time"] = teeTime.get("time", "N/A")
+        formattedTeeTimes.append(formattedTeeTime)
+    return formattedTeeTimes
 
 async def _getCanoeClubData(requestData):
+    print('Fetching Canoe Club data...')
     async with async_playwright() as p:
         print(f"Request Data: {requestData}")  # Debugging line
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        page.set_default_timeout(6000)  # 60 seconds timeout for all actions
+        page.set_default_timeout(60000)  # 60 seconds timeout for all actions
         await page.goto(
             "https://www.winnipeg.ca/recreation-leisure/golf-courses/canoe-club"
         )
@@ -75,5 +93,5 @@ async def _getCanoeClubData(requestData):
 async def getData(requestData):
     html = await _getCanoeClubData(requestData)
     parsed_data = _parseHTMLContent(html)
-    parsedTeeTimes = {"course": "Canoe Club", "tee_times": parsed_data}
-    return parsedTeeTimes
+    formattedData = _formatTeeTimes(parsed_data)
+    return formattedData

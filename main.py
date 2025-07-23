@@ -6,12 +6,20 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from pydantic import ValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     docs_url=None,
     redoc_url=None,
     openapi_url=None
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # TODO: Set to specific origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -25,11 +33,12 @@ async def read_root(request: Request):
 
 
 @app.post("/courses")
-@limiter.limit("3/minute")  # TODO: prod Limit to 1 requests per minute
+# @limiter.limit("3/minute")  # TODO: prod Limit to 1 requests per minute
 async def getAllCourses(request: Request, body: AllCoursesRequest):
     try:
-        compiler = ScrapCompiler(request)
+        compiler = ScrapCompiler(body)
         teeData = await compiler.compileAll()
+        print(teeData)
         return teeData
     except ValidationError as e:
         return {"error": "Invalid request data", "details": e.errors()}
